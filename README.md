@@ -1,4 +1,5 @@
   ![example](https://github.com/creetz/New-SharePointCalendatEntry/blob/master/pic1.png)
+  ![example](https://github.com/creetz/New-SharePointCalendatEntry/blob/master/pic2.png)
   
   .SYNOPSIS
   New-SharePointCalendatEntry.ps1
