@@ -1,6 +1,6 @@
 ﻿<#
     .SYNOPSIS
-    New-SharePointCalendatEntry.ps1
+    New-SharePointCalendarEntry.ps1
    
    	Christian Reetz
     (Updated by Christian Reetz)
@@ -12,13 +12,15 @@
 	
     .DESCRIPTION
 
-    This script opens multiple SharePointCalendar and creates events, which can be managed by a csv-file.
-    Please use the example csv-file --> New-SharedPointCalendar.csv
-    The SharePointCalendars are managed by the settings.xml-File.
-   	Please look at the setting.xml-ExampleFile, too.
+    This script connects to multiple SharePointCalendar and creates events.
     
-    my recommendation:
-    Use multiple Teams/o365-groups create multiple kalendar to share with guests and other-users.
+    The SharePointCalendars are managed by a settings.xml-File
+    
+    The events which will be created are managed by the csv-File.
+    New-ShrePointCalendarEntry.csv
+    
+    My recommendation:
+    Use multiple Teams/o365-groups and create sharepoint-calendarlists to share with guests and other-users.
 
     #>
 
