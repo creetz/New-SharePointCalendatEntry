@@ -65,6 +65,64 @@ foreach ($SharePointCalendar in $settings.SharePointCalendar)
         $Context.Load($List)
         $Context.ExecuteQuery()
 
+        #View Items
+        <#
+        $camlQuery = new-object Microsoft.SharePoint.Client.CamlQuery;
+        $camlQuery.ViewXml = "<View>
+        <Query>
+         <Where> 
+              <Eq>   
+               <FieldRef Name='Category' /> 
+                    <Value Type='Text'>$SharePointKalendarCategory</Value>
+                 </Eq>
+               </Where>
+         </Query>
+        </View>"
+        
+        $listItems = $List.GetItems($camlQuery);
+        $context.Load($listItems)
+        $context.ExecuteQuery();
+        
+        foreach($item in $listItems)
+        {
+         Write-Host "Title: " $item["Title"]
+        }
+        #>
+        #Delete Items
+        
+        $camlQuery = new-object Microsoft.SharePoint.Client.CamlQuery;
+        $camlQuery.ViewXml = "<View>
+        <Query>
+         <Where> 
+              <Eq>   
+               <FieldRef Name='Category' /> 
+                    <Value Type='Text'>$SharePointKalendarCategory</Value>
+                 </Eq>
+               </Where>
+         </Query>
+        </View>"
+        
+        $listItems = $List.GetItems($camlQuery);
+        $context.Load($listItems)
+        $context.ExecuteQuery();
+
+        write-host "Total Number of List Items found:"$ListItems.Count
+ 
+        if ($ListItems.Count -gt 0)
+        {
+            #Loop through each item and delete
+            For ($i = $ListItems.Count-1; $i -ge 0; $i--)
+            {
+                $ListItems[$i].DeleteObject()
+            }
+            $Context.ExecuteQuery()
+             
+            Write-Host "All List Items deleted Successfully!"
+        }
+
+
+        #Add Items
+
         Write-Host -ForegroundColor White "Create Events:"
         
         foreach ($event in $events)
