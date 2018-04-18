@@ -25,6 +25,8 @@
     #>
 
 $settings = Import-Clixml -Path $PSScriptRoot\settings.xml
+$now = get-date
+$now2 = "$($now.year)-$($now.month)-$($now.day)T$($now.hour):$($now.minute):$($now.Second)Z"
 
 #Add references to SharePoint client assemblies and authenticate to Office 365 site - required for CSOM
 Add-Type -Path "C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\15\ISAPI\Microsoft.SharePoint.Client.dll"
@@ -94,14 +96,22 @@ foreach ($SharePointCalendar in $settings.SharePointCalendar)
         $camlQuery.ViewXml = "<View>
         <Query>
          <Where> 
+              <And>
               <Eq>   
                <FieldRef Name='Category' /> 
                     <Value Type='Text'>$SharePointKalendarCategory</Value>
-                 </Eq>
-               </Where>
+               </Eq> 
+               <Gt>   
+               <FieldRef Name='EventDate' /> 
+                    <Value Type='DateTime' IncludeTimeValue='false'>$now2</Value>
+               </Gt>
+               </And>
+          </Where>
          </Query>
         </View>"
         
+        #$caml="<View><Query><Where><Eq><FieldRef Name='Created'/><Value Type='DateTime' IncludeTimeValue='FALSE'>2014-09-11</Value></Eq></Where></Query></View>"
+
         $listItems = $List.GetItems($camlQuery);
         $context.Load($listItems)
         $context.ExecuteQuery();
@@ -127,19 +137,24 @@ foreach ($SharePointCalendar in $settings.SharePointCalendar)
         
         foreach ($event in $events)
         {
-            Write-Host -ForegroundColor Green "$($event.EventDate) - $($event.EndDate) | $($event.Title)"
-            
-            #Adds an item to the list
-            $ListItemInfo = New-Object Microsoft.SharePoint.Client.ListItemCreationInformation
-            $Item = $List.AddItem($ListItemInfo)
-            $Item["Title"] = "$($event.Title)"
-            $Item["EventDate"] = $event.EventDate
-            $Item["EndDate"] = $event.EndDate
-            $Item["Description"] = "$($event.Description)"
-            $Item["Category"] = "$($event.Category)"
-            $Item["Location"] = "$($event.Location)"
-            $Item.Update()
-            $Context.ExecuteQuery()   
+            $eventdate = ($event.eventdate -split '/' -split ':' -split ' ')
+            $eventdate2 = Get-Date -Month $eventdate[0] -Day $eventdate[1] -Year $eventdate[2] -Hour $eventdate[3] -Minute $eventdate[4]
+            if ($eventdate2 -gt $now)
+            {
+                Write-Host -ForegroundColor Green "$($event.EventDate) - $($event.EndDate) | $($event.Title)"
+                
+                #Adds an item to the list
+                $ListItemInfo = New-Object Microsoft.SharePoint.Client.ListItemCreationInformation
+                $Item = $List.AddItem($ListItemInfo)
+                $Item["Title"] = "$($event.Title)"
+                $Item["EventDate"] = $event.EventDate
+                $Item["EndDate"] = $event.EndDate
+                $Item["Description"] = "$($event.Description)"
+                $Item["Category"] = "$($event.Category)"
+                $Item["Location"] = "$($event.Location)"
+                $Item.Update()
+                $Context.ExecuteQuery()
+            }
         }
     }   
 }
