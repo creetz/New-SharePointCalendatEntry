@@ -8,7 +8,7 @@
 	THIS CODE IS MADE AVAILABLE AS IS, WITHOUT WARRANTY OF ANY KIND. THE ENTIRE 
 	RISK OF THE USE OR THE RESULTS FROM THE USE OF THIS CODE REMAINS WITH THE USER.
 	
-	11.04.2018
+	20.04.2018
 	
     .DESCRIPTION
 
@@ -24,7 +24,9 @@
 
     #>
 
-$settings = Import-Clixml -Path $PSScriptRoot\settings.xml
+[bool]$DelteOnlyUpcomingEvents = $false
+
+[xml]$settings = Get-Content -Path settings.xml
 $now = get-date
 $now2 = "$($now.year)-$($now.month)-$($now.day)T$($now.hour):$($now.minute):$($now.Second)Z"
 
@@ -33,12 +35,12 @@ Add-Type -Path "C:\Program Files\Common Files\Microsoft Shared\Web Server Extens
 Add-Type -Path "C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\15\ISAPI\Microsoft.SharePoint.Client.Runtime.dll"
 $cred = Get-Credential
 
-foreach ($SharePointCalendar in $settings.SharePointCalendar)
+foreach ($SharePointCalendar in $settings.xml.sharepointcalendar)
 {
-    $SiteURL = $SharePointCalendar.split(';')[0]
-    $SharePointKalendarCategory = $SharePointCalendar.split(';')[1]
-    $SharePointKalendarTitle = $SharePointCalendar.split(';')[2]
-    $SharePointKalendarIsEnabled = $SharePointCalendar.split(';')[3]
+    $SiteURL = $SharePointCalendar.url
+    $SharePointKalendarCategory = $SharePointCalendar.identifier
+    $SharePointKalendarTitle = $SharePointCalendar.calendarname
+    $SharePointKalendarIsEnabled = $SharePointCalendar.isactive
 
     if ($SharePointKalendarIsEnabled -eq 1)
     {
@@ -67,50 +69,49 @@ foreach ($SharePointCalendar in $settings.SharePointCalendar)
         $Context.Load($List)
         $Context.ExecuteQuery()
 
-        #View Items
-        <#
+
+        
         $camlQuery = new-object Microsoft.SharePoint.Client.CamlQuery;
-        $camlQuery.ViewXml = "<View>
-        <Query>
-         <Where> 
-              <Eq>   
-               <FieldRef Name='Category' /> 
-                    <Value Type='Text'>$SharePointKalendarCategory</Value>
-                 </Eq>
-               </Where>
-         </Query>
-        </View>"
-        
-        $listItems = $List.GetItems($camlQuery);
-        $context.Load($listItems)
-        $context.ExecuteQuery();
-        
-        foreach($item in $listItems)
+ 
+        if ($DelteOnlyUpcomingEvents)
         {
-         Write-Host "Title: " $item["Title"]
+            $camlQuery.ViewXml = "<View>
+            <Query>
+             <Where> 
+                  <And>
+                        <Eq>
+                            <FieldRef Name='Category' /><Value Type='Text'>$SharePointKalendarCategory</Value>
+                        </Eq> 
+                   <And>
+                        <Gt>
+                            <FieldRef Name='EventDate' /><Value Type='DateTime' IncludeTimeValue='false'>$now2</Value>
+                        </Gt>
+                        <Eq>   
+                            <FieldRef Name='Author' /><Value Type='Integer'><UserID /></Value>
+                        </Eq>
+                    </And>
+                    </And>
+               </Where>
+              </Query>
+            </View>"
         }
-        #>
-        #Delete Items
-        
-        $camlQuery = new-object Microsoft.SharePoint.Client.CamlQuery;
-        $camlQuery.ViewXml = "<View>
-        <Query>
-         <Where> 
-              <And>
-              <Eq>   
-               <FieldRef Name='Category' /> 
-                    <Value Type='Text'>$SharePointKalendarCategory</Value>
-               </Eq> 
-               <Gt>   
-               <FieldRef Name='EventDate' /> 
-                    <Value Type='DateTime' IncludeTimeValue='false'>$now2</Value>
-               </Gt>
-               </And>
-          </Where>
-         </Query>
-        </View>"
-        
-        #$caml="<View><Query><Where><Eq><FieldRef Name='Created'/><Value Type='DateTime' IncludeTimeValue='FALSE'>2014-09-11</Value></Eq></Where></Query></View>"
+        else
+        {
+            $camlQuery.ViewXml = "<View>
+            <Query>
+             <Where> 
+                  <And>
+                        <Eq>
+                            <FieldRef Name='Category' /><Value Type='Text'>$SharePointKalendarCategory</Value>
+                        </Eq> 
+                        <Eq>   
+                            <FieldRef Name='Author' /><Value Type='Integer'><UserID /></Value>
+                        </Eq>
+                    </And>
+                </Where>
+              </Query>
+            </View>"
+        }
 
         $listItems = $List.GetItems($camlQuery);
         $context.Load($listItems)
